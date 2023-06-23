@@ -20,10 +20,10 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::array<const char *, 1> validationLayers{
+constexpr std::array<const char *, 1> validationLayers{
     "VK_LAYER_KHRONOS_validation"};
 
-const std::array<const char *, 1> deviceExtensions{
+constexpr std::array<const char *, 1> deviceExtensions{
     VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 #ifdef NDEBUG
@@ -331,7 +331,7 @@ int main() {
   try {
     Main m;
     m.mainLoop();
-  } catch (const std::exception e) {
+  } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;
     return 1;
   }
