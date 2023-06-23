@@ -4,18 +4,29 @@
 #include <iostream>
 #include <string_view>
 
+#ifndef __GNUC__
+// Portable overflow check
+bool add_overflow_check(int64_t a, int64_t b, int64_t *c) {
+  *c = a + b;
+  bool result = INT64_MAX - a - b < 0;
+  return result;
+}
+#else
+#define add_overflow_check __builtin_add_overflow;
+#endif
+
 int print_fib(int iterations) {
   int64_t fib, fib_1 = 1, fib_2 = 1;
   for (int i = 1; i <= iterations; i++) {
     if (i == 1 || i == 2)
       std::cout << 1 << '\n';
     else {
-      if (INT64_MAX - fib_1 - fib_2 < 0) {
+      if (__builtin_add_overflow(fib_1, fib_2, &fib)) {
         std::cerr << "Integer overflow, stopped at " << i << " iterations."
                   << std::endl;
         return EXIT_FAILURE;
       }
-      fib = fib_1 + fib_2;
+
       fib_2 = fib_1;
       fib_1 = fib;
       std::cout << fib << '\n';
