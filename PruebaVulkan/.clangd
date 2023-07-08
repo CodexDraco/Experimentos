@@ -1,2 +1,2 @@
 CompileFlags:
-  Add: [-std=c++20, -stdlib=libc++, -Wall]
+  Add: [-std=c++17, -stdlib=libc++, -Wall]

@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -150,6 +152,12 @@ struct QueueFamilyIndices {
   }
 };
 
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
+};
+
 class PhysicalDevice {
 public:
   PhysicalDevice(VkInstance, VkSurfaceKHR);
@@ -161,10 +169,15 @@ private:
   VkPhysicalDevice m_device;
   QueueFamilyIndices m_queueFamilyIndices;
   VkSurfaceKHR m_surface;
+  SwapChainSupportDetails m_swapChainSupportDetails;
 
   bool isDeviceSuitable(VkPhysicalDevice);
   QueueFamilyIndices findQueueFamilies(VkPhysicalDevice);
   bool checkExtensionSupport(VkPhysicalDevice);
+  SwapChainSupportDetails querySwapChainSupport();
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat();
+  VkPresentModeKHR chooseSwapPresentMode();
+  VkExtent2D chooseSwapExtent(GLFWwindow *);
 };
 
 PhysicalDevice::PhysicalDevice(VkInstance instance, VkSurfaceKHR surface) {
@@ -216,8 +229,12 @@ bool PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device) {
   m_queueFamilyIndices = findQueueFamilies(device);
   if (m_queueFamilyIndices.isComplete()) {
     if (checkExtensionSupport(device)) {
-      std::cout << "Using GPU: " << properties.deviceName << std::endl;
-      return true;
+      m_swapChainSupportDetails = querySwapChainSupport();
+      if (!m_swapChainSupportDetails.formats.empty() &&
+          !m_swapChainSupportDetails.presentModes.empty()) {
+        std::cout << "Using GPU: " << properties.deviceName << std::endl;
+        return true;
+      }
     }
   }
   return false;
@@ -243,6 +260,77 @@ QueueFamilyIndices PhysicalDevice::findQueueFamilies(VkPhysicalDevice device) {
     }
   }
   return result;
+}
+
+SwapChainSupportDetails PhysicalDevice::querySwapChainSupport() {
+  SwapChainSupportDetails details{};
+
+  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device, m_surface,
+                                            &details.capabilities);
+
+  uint32_t formatCount;
+  vkGetPhysicalDeviceSurfaceFormatsKHR(m_device, m_surface, &formatCount,
+                                       nullptr);
+
+  if (formatCount > 0) {
+    details.formats.resize(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(m_device, m_surface, &formatCount,
+                                         details.formats.data());
+  }
+
+  uint32_t presentModeCount;
+  vkGetPhysicalDeviceSurfacePresentModesKHR(m_device, m_surface,
+                                            &presentModeCount, nullptr);
+
+  if (presentModeCount > 0) {
+    details.presentModes.resize(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+        m_device, m_surface, &presentModeCount, details.presentModes.data());
+  }
+
+  return details;
+}
+
+VkSurfaceFormatKHR PhysicalDevice::chooseSwapSurfaceFormat() {
+  for (const auto &availableFormat : m_swapChainSupportDetails.formats) {
+    if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+        availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      return availableFormat;
+  }
+
+  return m_swapChainSupportDetails.formats[0];
+}
+
+VkPresentModeKHR PhysicalDevice::chooseSwapPresentMode() {
+  for (const auto &presentMode : m_swapChainSupportDetails.presentModes) {
+    if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+      return presentMode;
+  }
+
+  return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D PhysicalDevice::chooseSwapExtent(GLFWwindow *window) {
+  if (m_swapChainSupportDetails.capabilities.currentExtent.width !=
+      std::numeric_limits<uint32_t>::max()) {
+    return m_swapChainSupportDetails.capabilities.currentExtent;
+  } else {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    VkExtent2D actualExtent{static_cast<uint32_t>(width),
+                            static_cast<uint32_t>(height)};
+    actualExtent.width =
+        std::clamp(actualExtent.width,
+                   m_swapChainSupportDetails.capabilities.minImageExtent.width,
+                   m_swapChainSupportDetails.capabilities.maxImageExtent.width);
+    actualExtent.height = std::clamp(
+        actualExtent.height,
+        m_swapChainSupportDetails.capabilities.minImageExtent.height,
+        m_swapChainSupportDetails.capabilities.maxImageExtent.height);
+
+    return actualExtent;
+  }
 }
 
 class Device {

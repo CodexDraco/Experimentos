@@ -1,5 +1,5 @@
-CFLAGS = -std=c++17 -O2
-LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
+CFLAGS = -stdlib=libc++ -std=c++17 -O2
+LDFLAGS = -stdlib=libc++ -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
 
 PruebaVulkan: main.o
 	clang++ -o PruebaVulkan main.o $(LDFLAGS)
