@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
-#include <format>
+#include <fmt/core.h>
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
@@ -29,10 +29,9 @@ bool print_fib(const int iterations) {
   for (int i = 1; i <= iterations; i++) {
     auto [f, ov] = fib.next();
     if (!ov) {
-      std::cout << std::format("{}\n", f);
+      fmt::print("{}\n", f);
     } else {
-      std::cerr << std::format("Stoped at {} iterations: Integer overflow.\n",
-                               i);
+      fmt::print("Stoped at {} iterations: Integer overflow.\n", i);
       return false;
     }
   }
@@ -42,7 +41,7 @@ bool print_fib(const int iterations) {
 
 int main(int argc, const char *argv[]) {
   if (argc != 2) {
-    std::cerr << std::format("Needs one argument: {} 10\n", argv[0]);
+    fmt::print("Needs one argument: {} 10\n", argv[0]);
     return EXIT_FAILURE;
   }
 
@@ -51,7 +50,7 @@ int main(int argc, const char *argv[]) {
   auto const [ptr, ec] = std::from_chars(s.begin(), s.end(), iterations);
 
   if (ec != std::errc() || ptr != s.end()) {
-    std::cerr << std::format("Unable to parse argument: {}\n", s);
+    fmt::print("Unable to parse argument: {}\n", s);
     return EXIT_FAILURE;
   }
 
